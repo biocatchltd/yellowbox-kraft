@@ -1,4 +1,4 @@
-name: Test Snowglobe
+name: Test and lint
 
 on:
   push:
