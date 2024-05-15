@@ -1,9 +1,16 @@
 from contextlib import closing
-from typing import ContextManager, Optional, cast
+from typing import Any, ContextManager, Optional, cast
 
 from docker import DockerClient
-from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import KafkaError
+
+try:
+    from kafka import KafkaConsumer, KafkaProducer
+    from kafka.errors import KafkaError
+except ImportError:
+    KafkaConsumer = KafkaProducer = None
+    # python3.12 uses confluent_kafka
+    from confluent_kafka import Consumer as ConfluentConsumer
+    from confluent_kafka.error import KafkaError
 from yellowbox.containers import create_and_pull
 from yellowbox.retry import RetrySpec
 from yellowbox.subclasses import AsyncRunMixin, RunMixin, SingleContainerService
@@ -31,18 +38,25 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             publish_all_ports=True,
             detach=True,
             environment={
+                "KAFKA_CFG_PROCESS_ROLES": "controller,broker",
+                "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS": "0@localhost:9093",
+                "KAFKA_CFG_CONTROLLER_LISTENER_NAMES": "CONTROLLER",
+                "KAFKA_CFG_NODE_ID": "0",
                 "KAFKA_CFG_LISTENERS": f"PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://0.0.0.0:{self.port}",
                 "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP": (
                     "CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT"
                 ),
                 "KAFKA_CFG_ADVERTISED_LISTENERS": f"EXTERNAL://localhost:{self.port},PLAINTEXT://kafka:9092",
                 "ALLOW_PLAINTEXT_LISTENER": "yes",
+                "KAFKA_ENABLE_KRAFT": "true",
                 **extra_broker_env,
             },
         )
         super().__init__(container, **kwargs)
 
     def consumer(self, **kwargs) -> ContextManager[KafkaConsumer]:
+        if KafkaConsumer is None:
+            raise ImportError("kafka-python is not installed")
         port = self.port
         return cast(
             "ContextManager[KafkaConsumer]",
@@ -54,6 +68,8 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
         )
 
     def producer(self, **kwargs) -> ContextManager[KafkaProducer]:
+        if KafkaConsumer is None:
+            raise ImportError("kafka-python is not installed")
         port = self.port
         return cast(
             "ContextManager[KafkaProducer]",
@@ -64,9 +80,29 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             ),
         )
 
+    def _consumer(self, **kwargs) -> ContextManager[Any]:
+        port = self.port
+        if KafkaConsumer is not None:
+            return closing(
+                KafkaConsumer(
+                    bootstrap_servers=[f"{DOCKER_EXPOSE_HOST}:{port}"], security_protocol="PLAINTEXT", **kwargs
+                )
+            )
+        else:
+            return closing(
+                ConfluentConsumer(
+                    {
+                        "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{port}",
+                        "security.protocol": "PLAINTEXT",
+                        "group.id": "yb-0",
+                        **kwargs,
+                    }
+                )
+            )
+
     def start(self, retry_spec: Optional[RetrySpec] = None):
         def healthcheck():
-            with self.consumer() as consumer:
+            with self._consumer() as consumer:
                 consumer.topics()
 
         super().start()
