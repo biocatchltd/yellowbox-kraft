@@ -9,8 +9,8 @@ license = "MIT"
 python = "^3.8"
 yellowbox = { version = ">=0.8.0" }
 # python 3.11 and lower use kafka-python, 3.12 and higher use confluent-kafka
-kafka-python = { version = "*", optional = true, python="<3.12" }
-confluent-kafka = { version = "*", optional = true, python=">=3.12" }
+kafka-python = { version = "*", python="<3.12" }
+confluent-kafka = { version = "*", python=">=3.12" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = ">=0.0.267"
