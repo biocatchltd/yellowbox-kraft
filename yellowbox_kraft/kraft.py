@@ -117,8 +117,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
 
         super().start()
         retry_spec = retry_spec or RetrySpec(attempts=20)
-        with await retry_spec.aretry(healthcheck, (KafkaError, ConnectionError, ValueError)):
-            pass
+        await retry_spec.aretry(healthcheck, (KafkaError, ConnectionError, ValueError))
 
     def stop(self, signal="SIGKILL"):
         # difference in default signal
