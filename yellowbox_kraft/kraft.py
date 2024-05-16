@@ -102,8 +102,8 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
 
     def start(self, retry_spec: Optional[RetrySpec] = None):
         def healthcheck():
-            with self._consumer() as consumer:
-                consumer.topics()
+            with self._consumer():
+                pass
 
         super().start()
         retry_spec = retry_spec or RetrySpec(attempts=20)
@@ -111,9 +111,13 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
         return self
 
     async def astart(self, retry_spec: Optional[RetrySpec] = None) -> None:
+        def healthcheck():
+            with self._consumer():
+                pass
+
         super().start()
         retry_spec = retry_spec or RetrySpec(attempts=20)
-        with await retry_spec.aretry(self.consumer, (KafkaError, ConnectionError, ValueError)):
+        with await retry_spec.aretry(healthcheck, (KafkaError, ConnectionError, ValueError)):
             pass
 
     def stop(self, signal="SIGKILL"):
