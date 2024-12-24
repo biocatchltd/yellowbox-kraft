@@ -37,7 +37,7 @@ jobs:
       run: |
         poetry publish -u "$PYPI_USERNAME" -p "$PYPI_PASSWORD" --build
     - name: Upload Binaries as Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: binaries
         path: dist
