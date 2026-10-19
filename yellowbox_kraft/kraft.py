@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from contextlib import closing
-from typing import Any, ContextManager, Optional, cast
+from typing import Any, ContextManager, cast
 
 from docker import DockerClient
 
@@ -104,7 +106,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 )
             )
 
-    def start(self, retry_spec: Optional[RetrySpec] = None):
+    def start(self, retry_spec: RetrySpec | None = None):
         def healthcheck():
             with self._consumer():
                 pass
@@ -114,7 +116,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
         retry_spec.retry(healthcheck, (KafkaError, ConnectionError, ValueError))
         return self
 
-    async def astart(self, retry_spec: Optional[RetrySpec] = None) -> None:
+    async def astart(self, retry_spec: RetrySpec | None = None) -> None:
         def healthcheck():
             with self._consumer():
                 pass
