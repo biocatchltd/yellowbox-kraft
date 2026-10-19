@@ -25,7 +25,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
     container_port: int = KAFKA_INNER_PORT
 
     def __init__(
-        self, docker_client: DockerClient, image: str = "bitnami/kafka:latest", bitnami_debug: bool = False, **kwargs
+        self, docker_client: DockerClient, image: str = "bitnamilegacy/kafka:4.0.0-debian-12-r10", bitnami_debug: bool = False, **kwargs
     ):
         self.port = get_free_port()
         extra_broker_env = {}
