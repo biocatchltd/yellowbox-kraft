@@ -86,13 +86,11 @@ def kafka_kraft_service(docker_client):
 
 
 def test_kafka_kraft_sibling_network(docker_client, kafka_kraft_service):
-    # The broker advertises itself as kafka, so the second container needs that same name
-    # in order to connect.
-    with temp_network(docker_client) as network, connect(network, kafka_kraft_service, aliases=["kafka"]):
+    with temp_network(docker_client) as network, connect(network, kafka_kraft_service) as alias:
         container = create_and_pull(
             docker_client,
             "confluentinc/cp-kafkacat:latest",
-            f"kafkacat -b kafka:{kafka_kraft_service.container_port} -L",
+            f"kafkacat -b {alias[0]}:{kafka_kraft_service.container_port} -L",
         )
         with connect(network, container):
             container.start()
