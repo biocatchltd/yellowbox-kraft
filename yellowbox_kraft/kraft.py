@@ -113,6 +113,8 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             with self._consumer():
                 pass
             return
+        # On 3.12 and 3.15, creating a client does not talk to the broker, so kafkacat ran
+        # before Kafka was ready. This check asks the broker and waits for an answer.
         consumer = ConfluentConsumer(
             {
                 "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{self.port}",
