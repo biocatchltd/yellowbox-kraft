@@ -35,3 +35,22 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
+
+  # Trial only. Do not merge. Shows whether Python 3.15 can install confluent-kafka
+  # after the C compiler and header packages are present.
+  try-python-315:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.15'
+    - name: Install the missing build files
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc python3-dev librdkafka-dev
+    - name: Try to install confluent-kafka
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install confluent-kafka
