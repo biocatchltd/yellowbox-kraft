@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    # It runs only when matrix.python-version == '3.15'. Python 3.15 has no
+    # ready-made confluent-kafka package, so pip builds it from source.
     - name: Install librdkafka 2.15
       if: matrix.python-version == '3.15'
       run: |
