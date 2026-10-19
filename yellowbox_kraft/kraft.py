@@ -13,8 +13,7 @@ try:
 except ImportError:
     KafkaConsumer = KafkaProducer = None
     # python3.12 uses confluent_kafka
-    from confluent_kafka import Consumer as ConfluentConsumer
-    from confluent_kafka import KafkaException
+    from confluent_kafka import Consumer as ConfluentConsumer, KafkaException
     from confluent_kafka.error import KafkaError
 from yellowbox.containers import create_and_pull
 from yellowbox.retry import RetrySpec
