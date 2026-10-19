@@ -86,8 +86,8 @@ def kafka_kraft_service(docker_client):
 
 
 def test_kafka_kraft_sibling_network(docker_client, kafka_kraft_service):
-    # The broker advertises itself as kafka:9092. The second container can only
-    # reach that name if the broker joins the network under the same alias.
+    # The broker advertises itself as kafka, so the second container needs that same name
+    # in order to connect.
     with temp_network(docker_client) as network, connect(network, kafka_kraft_service, aliases=["kafka"]):
         container = create_and_pull(
             docker_client,
