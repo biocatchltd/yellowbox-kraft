@@ -36,8 +36,8 @@ jobs:
       with:
         file: ./coverage.xml
 
-  # Trial only. Do not merge. Installs Confluent's librdkafka 2.16, then builds
-  # confluent-kafka for Python 3.15. Ubuntu's own copy is 2.3 and is too old.
+  # Trial only. Do not merge. Installs the wupserver pair: librdkafka 2.15.0 and
+  # confluent-kafka 2.15.0, then builds that package for Python 3.15.
   try-python-315:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +46,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.15'
-    - name: Install librdkafka 2.16
+    - name: Install librdkafka 2.15
       run: |
         sudo mkdir -p /etc/apt/keyrings
         wget -qO - https://packages.confluent.io/clients/deb/archive.key | gpg --dearmor | sudo tee /etc/apt/keyrings/confluent.gpg >/dev/null
@@ -60,9 +60,9 @@ jobs:
         printf 'Types: deb\nURIs: https://packages.confluent.io/clients/deb/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/confluent.gpg\n' \
           "$VERSION_CODENAME" "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/confluent-clients.sources >/dev/null
         sudo apt-get update
-        sudo apt-get install -y gcc python3-dev "librdkafka-dev=2.16.0-1.cflt~${suffix}"
-    - name: Try to install confluent-kafka
+        sudo apt-get install -y gcc python3-dev "librdkafka-dev=2.15.0-1.cflt~${suffix}"
+    - name: Try to install confluent-kafka 2.15.0
       run: |
         python -m pip install --upgrade pip
-        python -m pip install confluent-kafka
+        python -m pip install 'confluent-kafka==2.15.0'
         python -c 'import confluent_kafka; print(confluent_kafka.version())'
