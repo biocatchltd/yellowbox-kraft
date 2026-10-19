@@ -60,7 +60,10 @@ jobs:
         printf 'Types: deb\nURIs: https://packages.confluent.io/clients/deb/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/confluent.gpg\n' \
           "$VERSION_CODENAME" "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/confluent-clients.sources >/dev/null
         sudo apt-get update
-        sudo apt-get install -y gcc python3-dev "librdkafka-dev=2.15.0-1.cflt~${suffix}"
+        sudo apt-get install -y gcc python3-dev \
+          "librdkafka1=2.15.0-1.cflt~${suffix}" \
+          "librdkafka++1=2.15.0-1.cflt~${suffix}" \
+          "librdkafka-dev=2.15.0-1.cflt~${suffix}"
     - name: Try to install confluent-kafka 2.15.0
       run: |
         python -m pip install --upgrade pip
