@@ -31,6 +31,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
     def __init__(
         self,
         docker_client: DockerClient,
+        # bitnami/kafka:latest was removed from Docker Hub, so the tests use the archived image.
         image: str = "bitnamilegacy/kafka:4.0.0-debian-12-r10",
         bitnami_debug: bool = False,
         **kwargs,
