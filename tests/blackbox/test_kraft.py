@@ -86,7 +86,7 @@ def kafka_kraft_service(docker_client):
 
 
 def test_kafka_kraft_sibling_network(docker_client, kafka_kraft_service):
-    # 20 Oct 2026: the broker advertises itself as 'kafka', so the second container must connect under that name.
+    # 20 Oct 2026: the Kafka server advertises itself as 'kafka', so the second container must connect under that name.
     with temp_network(docker_client) as network, connect(network, kafka_kraft_service, aliases=["kafka"]):
         container = create_and_pull(
             docker_client,

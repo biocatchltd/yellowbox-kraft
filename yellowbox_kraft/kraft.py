@@ -124,7 +124,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             }
         )
         try:
-            # 20 Oct 2026: on Python 3.12 and 3.15, creating a Kafka client does not contact the broker,
+            # 20 Oct 2026: on Python 3.12 and 3.15, creating a Kafka client does not contact the Kafka server,
             # so wait until list_topics() answers before the tests start.
             metadata = consumer.list_topics(timeout=5)
             if not metadata.brokers:
