@@ -11,19 +11,38 @@ jobs:
   unittest:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [3.8, 3.9, '3.11', '3.12']
+        python-version: ['3.11', '3.12', '3.15']
     steps:
     - uses: actions/checkout@v3
-    - name: Install poetry
-      run: |
-        python -m pip install pip --upgrade
-        pip install poetry
-        poetry config virtualenvs.prefer-active-python true
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    # It runs only when matrix.python-version == '3.15'. Python 3.15 has no
+    # ready-made confluent-kafka package, so pip builds it from source.
+    - name: Install librdkafka 2.15
+      if: matrix.python-version == '3.15'
+      run: |
+        sudo mkdir -p /etc/apt/keyrings
+        wget -qO - https://packages.confluent.io/clients/deb/archive.key | gpg --dearmor | sudo tee /etc/apt/keyrings/confluent.gpg >/dev/null
+        . /etc/os-release
+        case "$VERSION_ID" in
+          22.04) suffix=ubu22 ;;
+          24.04) suffix=ubu24 ;;
+          26.04) suffix=ubu26 ;;
+          *) echo "No Confluent librdkafka build for Ubuntu $VERSION_ID" >&2; exit 1 ;;
+        esac
+        printf 'Types: deb\nURIs: https://packages.confluent.io/clients/deb/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/confluent.gpg\n' \
+          "$VERSION_CODENAME" "$(dpkg --print-architecture)" | sudo tee /etc/apt/sources.list.d/confluent-clients.sources >/dev/null
+        sudo apt-get update
+        sudo apt-get install -y gcc python3-dev \
+          "librdkafka1=2.15.0-1.cflt~${suffix}" \
+          "librdkafka++1=2.15.0-1.cflt~${suffix}" \
+          "librdkafka-dev=2.15.0-1.cflt~${suffix}"
+    - name: Install poetry
+      run: curl -sSL https://install.python-poetry.org | python3 - --version 2.5.1
     - name: Install dependencies
       run: poetry update
     - name: Lint

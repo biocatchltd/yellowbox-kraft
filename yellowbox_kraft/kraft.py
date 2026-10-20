@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from contextlib import closing
-from typing import Any, ContextManager, Optional, cast
+from typing import Any, ContextManager, cast
 
 from docker import DockerClient
 
@@ -25,7 +27,11 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
     container_port: int = KAFKA_INNER_PORT
 
     def __init__(
-        self, docker_client: DockerClient, image: str = "bitnami/kafka:latest", bitnami_debug: bool = False, **kwargs
+        self,
+        docker_client: DockerClient,
+        image: str = "bitnamilegacy/kafka:4.0.0-debian-12-r10",
+        bitnami_debug: bool = False,
+        **kwargs,
     ):
         self.port = get_free_port()
         extra_broker_env = {}
@@ -100,7 +106,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 )
             )
 
-    def start(self, retry_spec: Optional[RetrySpec] = None):
+    def start(self, retry_spec: RetrySpec | None = None):
         def healthcheck():
             with self._consumer():
                 pass
@@ -110,7 +116,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
         retry_spec.retry(healthcheck, (KafkaError, ConnectionError, ValueError))
         return self
 
-    async def astart(self, retry_spec: Optional[RetrySpec] = None) -> None:
+    async def astart(self, retry_spec: RetrySpec | None = None) -> None:
         def healthcheck():
             with self._consumer():
                 pass
