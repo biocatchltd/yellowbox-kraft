@@ -31,7 +31,9 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
     def __init__(
         self,
         docker_client: DockerClient,
-        # bitnami/kafka:latest was removed from Docker Hub, so the tests use the archived image.
+        # 20 Oct 2026: bitnami/kafka:latest was removed from Docker Hub, so tests use the archived
+        # bitnamilegacy image (approved by Ben). It gets no updates and may be removed; if it stops
+        # being pullable, replace it with another Kafka image.
         image: str = "bitnamilegacy/kafka:4.0.0-debian-12-r10",
         bitnami_debug: bool = False,
         **kwargs,
@@ -114,8 +116,6 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             with self._consumer():
                 pass
             return
-        # On 3.12 and 3.15, creating a client does not talk to the broker, so kafkacat ran
-        # before Kafka was ready. This check asks the broker and waits for an answer.
         consumer = ConfluentConsumer(
             {
                 "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{self.port}",
@@ -124,6 +124,8 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             }
         )
         try:
+            # 20 Oct 2026: on Python 3.12 and 3.15, creating a Kafka client does not contact the broker,
+            # so wait until list_topics() answers before the tests start.
             metadata = consumer.list_topics(timeout=5)
             if not metadata.brokers:
                 raise ConnectionError("Kafka has no brokers yet")
