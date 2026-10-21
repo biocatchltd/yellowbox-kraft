@@ -134,13 +134,13 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
 
     def start(self, retry_spec: RetrySpec | None = None):
         super().start()
-        retry_spec = retry_spec or RetrySpec(attempts=20)
+        retry_spec = retry_spec or RetrySpec(attempts=60)
         retry_spec.retry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
         return self
 
     async def astart(self, retry_spec: RetrySpec | None = None) -> None:
         super().start()
-        retry_spec = retry_spec or RetrySpec(attempts=20)
+        retry_spec = retry_spec or RetrySpec(attempts=60)
         await retry_spec.aretry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
 
     def stop(self, signal="SIGKILL"):
