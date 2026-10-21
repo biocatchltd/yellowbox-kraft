@@ -8,10 +8,12 @@ from docker import DockerClient
 try:
     from kafka import KafkaConsumer, KafkaProducer
     from kafka.errors import KafkaError
+
+    KafkaException = KafkaError
 except ImportError:
     KafkaConsumer = KafkaProducer = None
     # python3.12 uses confluent_kafka
-    from confluent_kafka import Consumer as ConfluentConsumer
+    from confluent_kafka import Consumer as ConfluentConsumer, KafkaException
     from confluent_kafka.error import KafkaError
 from yellowbox.containers import create_and_pull
 from yellowbox.retry import RetrySpec
@@ -29,6 +31,9 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
     def __init__(
         self,
         docker_client: DockerClient,
+        # 20 Oct 2026: bitnami/kafka:latest was removed from Docker Hub, so tests use the archived
+        # bitnamilegacy image (approved by Ben). It gets no updates and may be removed; if it stops
+        # being pullable, replace it with another Kafka image.
         image: str = "bitnamilegacy/kafka:4.0.0-debian-12-r10",
         bitnami_debug: bool = False,
         **kwargs,
@@ -106,24 +111,39 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 )
             )
 
-    def start(self, retry_spec: RetrySpec | None = None):
-        def healthcheck():
+    def _check_broker(self) -> None:
+        if KafkaConsumer is not None:
             with self._consumer():
                 pass
+            return
 
+        consumer = ConfluentConsumer(
+            {
+                "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{self.port}",
+                "security.protocol": "PLAINTEXT",
+                "group.id": "yb-health",
+            }
+        )
+
+        try:
+            # confluent-kafka connects lazily, so creating the consumer proves nothing; list_topics() needs a reply.
+            # timeout=0 always fails (it can't wait for the reply), so keep it short and let the retry do the waiting.
+            metadata = consumer.list_topics(timeout=0.1)
+            if not metadata.brokers:
+                raise ConnectionError("Kafka has no brokers yet")
+        finally:
+            consumer.close()
+
+    def start(self, retry_spec: RetrySpec | None = None):
         super().start()
         retry_spec = retry_spec or RetrySpec(attempts=20)
-        retry_spec.retry(healthcheck, (KafkaError, ConnectionError, ValueError))
+        retry_spec.retry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
         return self
 
     async def astart(self, retry_spec: RetrySpec | None = None) -> None:
-        def healthcheck():
-            with self._consumer():
-                pass
-
         super().start()
         retry_spec = retry_spec or RetrySpec(attempts=20)
-        await retry_spec.aretry(healthcheck, (KafkaError, ConnectionError, ValueError))
+        await retry_spec.aretry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
 
     def stop(self, signal="SIGKILL"):
         # difference in default signal
