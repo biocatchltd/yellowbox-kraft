@@ -116,7 +116,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             with self._consumer():
                 pass
             return
-        
+
         consumer = ConfluentConsumer(
             {
                 "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{self.port}",
@@ -124,9 +124,8 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 "group.id": "yb-health",
             }
         )
-       
+
         try:
-            
             # confluent-kafka connects lazily, so creating the consumer proves nothing; list_topics() needs a reply.
             # timeout=0 always fails (it can't wait for the reply), so keep it short and let the retry do the waiting.
             metadata = consumer.list_topics(timeout=0.1)
