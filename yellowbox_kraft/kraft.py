@@ -126,7 +126,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
         try:
             # confluent-kafka connects lazily, so creating the consumer proves nothing; list_topics() needs a reply.
             # timeout=0 always fails (it can't wait for the reply), so keep it short and let the retry do the waiting.
-            metadata = consumer.list_topics(timeout=1)
+            metadata = consumer.list_topics(timeout=0)
             if not metadata.brokers:
                 raise ConnectionError("Kafka has no brokers yet")
         finally:
