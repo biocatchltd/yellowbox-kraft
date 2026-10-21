@@ -116,6 +116,7 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             with self._consumer():
                 pass
             return
+        
         consumer = ConfluentConsumer(
             {
                 "bootstrap.servers": f"{DOCKER_EXPOSE_HOST}:{self.port}",
@@ -123,10 +124,12 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 "group.id": "yb-health",
             }
         )
+       
         try:
+            
             # confluent-kafka connects lazily, so creating the consumer proves nothing; list_topics() needs a reply.
             # timeout=0 always fails (it can't wait for the reply), so keep it short and let the retry do the waiting.
-            metadata = consumer.list_topics(timeout=0)
+            metadata = consumer.list_topics(timeout=0.1)
             if not metadata.brokers:
                 raise ConnectionError("Kafka has no brokers yet")
         finally:
@@ -134,13 +137,13 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
 
     def start(self, retry_spec: RetrySpec | None = None):
         super().start()
-        retry_spec = retry_spec or RetrySpec(attempts=60)
+        retry_spec = retry_spec or RetrySpec(attempts=20)
         retry_spec.retry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
         return self
 
     async def astart(self, retry_spec: RetrySpec | None = None) -> None:
         super().start()
-        retry_spec = retry_spec or RetrySpec(attempts=60)
+        retry_spec = retry_spec or RetrySpec(attempts=20)
         await retry_spec.aretry(self._check_broker, (KafkaException, KafkaError, ConnectionError, ValueError))
 
     def stop(self, signal="SIGKILL"):
