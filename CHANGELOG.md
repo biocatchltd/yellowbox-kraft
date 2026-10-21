@@ -2,10 +2,12 @@
 ## NEXT
 ### Added
 * Python 3.15 support
-* Default Kafka image is now bitnamilegacy/kafka:4.0.0-debian-12-r10
-* Startup waits until the Kafka server answers before returning
+### Changed
+* Default Kafka image to bitnamilegacy/kafka:4.0.0-debian-12-r10
+### Fixed
+* Kafka startup readiness now waits for the server to respond
 ### Internal
-* updated github actions
+* Updated GitHub Actions workflows
 ## 0.1.1
 ### Added
 * support for python 3.12

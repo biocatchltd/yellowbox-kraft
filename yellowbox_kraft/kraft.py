@@ -124,9 +124,9 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
             }
         )
         try:
-            # 20 Oct 2026: on Python 3.12 and 3.15, creating a Kafka client does not contact the Kafka server,
-            # so wait until list_topics() answers before the tests start.
-            metadata = consumer.list_topics(timeout=5)
+            # confluent-kafka connects lazily, so creating the consumer proves nothing; list_topics() needs a reply.
+            # timeout=0 always fails (it can't wait for the reply), so keep it short and let the retry do the waiting.
+            metadata = consumer.list_topics(timeout=1)
             if not metadata.brokers:
                 raise ConnectionError("Kafka has no brokers yet")
         finally:
