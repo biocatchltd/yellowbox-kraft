@@ -1,5 +1,5 @@
 # Yellowbox-Kraft Changelog
-## NEXT
+## 0.1.2
 ### Added
 * Python 3.15 support
 ### Changed
