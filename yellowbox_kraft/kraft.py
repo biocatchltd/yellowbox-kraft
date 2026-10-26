@@ -57,7 +57,11 @@ class KraftService(SingleContainerService, RunMixin, AsyncRunMixin):
                 "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP": (
                     "CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT"
                 ),
-                "KAFKA_CFG_ADVERTISED_LISTENERS": f"EXTERNAL://localhost:{self.port},PLAINTEXT://kafka:9092",
+                # Advertise DOCKER_EXPOSE_HOST (default 127.0.0.1), not localhost: on some CI
+                # runners localhost resolves to IPv6 while the mapped port is IPv4-only.
+                "KAFKA_CFG_ADVERTISED_LISTENERS": (
+                    f"EXTERNAL://{DOCKER_EXPOSE_HOST}:{self.port},PLAINTEXT://kafka:9092"
+                ),
                 "ALLOW_PLAINTEXT_LISTENER": "yes",
                 "KAFKA_ENABLE_KRAFT": "true",
                 **extra_broker_env,
