@@ -20,8 +20,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    # It runs only when matrix.python-version == '3.15'. Python 3.15 has no
-    # ready-made confluent-kafka package, so pip builds it from source.
+    # 20 Oct 2026: Python 3.15 has no prebuilt confluent-kafka package yet, so CI installs librdkafka 2.15.0 and builds it from source. Remove this step once confluent-kafka ships Python 3.15 wheels (confluent-kafka-python issue #2299).
     - name: Install librdkafka 2.15
       if: matrix.python-version == '3.15'
       run: |
@@ -41,6 +40,7 @@ jobs:
           "librdkafka1=2.15.0-1.cflt~${suffix}" \
           "librdkafka++1=2.15.0-1.cflt~${suffix}" \
           "librdkafka-dev=2.15.0-1.cflt~${suffix}"
+    # 20 Oct 2026: Poetry 2.5.1 via the official installer, the team's standard version (avoid versions ending in .0).
     - name: Install poetry
       run: curl -sSL https://install.python-poetry.org | python3 - --version 2.5.1
     - name: Install dependencies
