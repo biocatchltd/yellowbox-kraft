@@ -11,7 +11,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    # Set up Python before Poetry so the active interpreter is 3.11 for build/publish.
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -19,8 +18,7 @@ jobs:
     - name: Install poetry
       run: |
         python -m pip install pip --upgrade
-        pip install poetry
-        # Poetry 2.x dropped virtualenvs.prefer-active-python; setup-python above is enough.
+        pip install poetry==2.5.1
     - name: Install dependencies
       run: poetry update
     - name: Assert Version Correctness
